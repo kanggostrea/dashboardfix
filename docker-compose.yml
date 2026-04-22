@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  dashboard-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ghost-dashboard-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DASHBOARD_AUTH_KEY=GHOST_SECRET_2026
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  dashboard-frontend:
+    image: nginx:alpine
+    container_name: ghost-dashboard-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    restart: unless-stopped
