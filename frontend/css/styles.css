@@ -1,0 +1,62 @@
+:root {
+    --primary-color: #1a1a2e;
+    --accent-blue: #0f3460;
+    --accent-red: #e74c3c;
+    --text-primary: #ecf0f1;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Courier New', monospace;
+    background-color: #0f0f1e;
+    color: var(--text-primary);
+}
+
+.navbar {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-blue));
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #2d2d4d;
+}
+
+.navbar h1 { font-size: 1.5rem; letter-spacing: 2px; }
+
+.navbar-stats { display: flex; gap: 2rem; }
+
+.container { padding: 2rem; max-width: 1600px; margin: 0 auto; }
+
+.panels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.panel-card {
+    background: linear-gradient(135deg, #16213e, var(--accent-blue));
+    border: 2px solid #2d2d4d;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.3s;
+}
+
+.panel-card:hover {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 20px rgba(15, 52, 96, 0.5);
+}
+
+.panel-slot { font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; }
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.status-badge.online { background-color: rgba(39, 174, 96, 0.3); color: #27ae60; }
+
+.status-badge.offline { background-color: rgba(231, 76, 60, 0.3); color: var(--accent-red); }
