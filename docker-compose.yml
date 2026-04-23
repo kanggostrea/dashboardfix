@@ -1,13 +1,16 @@
+version: '3.8'
 services:
   dashboard-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ghost-dashboard-backend
     ports:
-      - "5000:5000"  # Internal port
-    expose:
-      - "5000"  # For nginx proxy
-  
-  dashboard-frontend:
-    ports:
-      - "80:80"  # Public port
+      - "5000:5000"  # ✅ Hanya ini yang perlu expose
+    environment:
+      - DASHBOARD_AUTH_KEY=GHOST_SECRET_2026
+      - FLASK_ENV=production
     volumes:
-      - ./frontend:/usr/share/nginx/html
-      - ./backend/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./backend:/app
+      - ./frontend:/app/static  # ✅ Serve static files dari Flask
+    restart: unless-stopped
