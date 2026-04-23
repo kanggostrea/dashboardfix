@@ -28,9 +28,4 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/dashboard:latest
-            ${{ secrets.DOCKER_USERNAME }}/dashboard:${{ github.sha }}
-
-      - name: Notify Success
-        run: echo "✅ Dashboard image pushed: ${{ secrets.DOCKER_USERNAME }}/dashboard:latest"
+          tags: paneldashboard/dashboard:latest,paneldashboard/dashboard:${{ github.sha }}
