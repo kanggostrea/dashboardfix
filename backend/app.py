@@ -729,34 +729,31 @@ def heartbeat():
 # ============================================
 @app.route('/api/status', methods=['GET'])
 def status():
-    """Get dashboard status summary dengan offline detection"""
     try:
-        summary = registry.get_status_summary()
+        from datetime import datetime
+        current_time = datetime.now()
         
-        # ✅ Mark panels offline jika heartbeat lama
-        import time as time_module
-        current_time = time_module.time()
-        
-        # Check each panel's last heartbeat
         for panel_id, panel_data in registry.panels.items():
             try:
-                from datetime import datetime
-                last_hb = datetime.fromisoformat(panel_data['last_heartbeat'])
-                last_hb_seconds = (datetime.now() - last_hb).total_seconds()
-                
-                # Offline jika > 60 detik tanpa heartbeat
-                if last_hb_seconds > 120:
+                last_hb_str = panel_data.get('last_heartbeat', '')
+                if not last_hb_str:
                     panel_data['status'] = 'OFFLINE'
-                else:
-                    panel_data['status'] = 'ONLINE'
-            except:
-                pass
+                    continue
+                    
+                last_hb = datetime.fromisoformat(last_hb_str)
+                elapsed = (current_time - last_hb).total_seconds()
+                
+                # 120 detik threshold (heartbeat tiap 30s, kasih buffer 4x)
+                panel_data['status'] = 'ONLINE' if elapsed <= 120 else 'OFFLINE'
+                
+            except Exception as e:
+                print(f"⚠️ [STATUS] Error parsing panel {panel_id}: {e}", flush=True)
+                panel_data['status'] = 'OFFLINE'
         
-        # Recalculate summary
         summary = registry.get_status_summary()
-        
-        print(f"📊 [STATUS] Online: {summary['online']}, Busy: {summary['busy']}, Idle: {summary['idle']}", flush=True)
+        print(f"📊 [STATUS] Online: {summary['online']}, Busy: {summary['busy']}", flush=True)
         return jsonify(summary), 200
+        
     except Exception as e:
         print(f"❌ [STATUS] Exception: {e}", flush=True)
         return jsonify({"error": str(e)}), 500
