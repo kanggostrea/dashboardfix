@@ -48,64 +48,206 @@ def serve_index():
         print(f"⚠️ [SERVE] frontend/index.html not found", flush=True)
         return """
         <!DOCTYPE html>
-        <html>
-        <head>
-            <title>GHOST COMMANDER</title>
-            <style>
-                body { 
-                    font-family: monospace; 
-                    background: #0f0f1e; 
-                    color: #ecf0f1; 
-                    display: flex; 
-                    justify-content: center; 
-                    align-items: center; 
-                    height: 100vh; 
-                    margin: 0; 
-                }
-                .container { text-align: center; }
-                h1 { color: #0f3460; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>👻 GHOST COMMANDER</h1>
-                <p>Loading dashboard...</p>
-                <p><small>Connecting to backend...</small></p>
+<html>
+<head>
+    <title>GHOST COMMANDER - Dashboard</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .command-section {
+            background: #16213e;
+            border: 2px solid #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .command-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .command-form input, .command-form select, .command-form button {
+            padding: 10px;
+            border: 1px solid #0f3460;
+            background: #0f1419;
+            color: #ecf0f1;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .command-form button:hover {
+            background: #0f3460;
+        }
+        .command-list {
+            margin-top: 20px;
+        }
+        .command-item {
+            background: #16213e;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .status-pending { color: #f39c12; }
+        .status-executing { color: #3498db; }
+        .status-success { color: #27ae60; }
+        .status-failed { color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>👻 GHOST COMMANDER</h1>
+        <div class="navbar-stats">
+            <div>ONLINE: <span id="stat-online">0</span></div>
+            <div>BUSY: <span id="stat-busy">0</span></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- PANELS TAB -->
+        <div id="panels-tab">
+            <h2>Panels</h2>
+            <div class="panels-grid" id="panels-grid"></div>
+        </div>
+
+        <!-- COMMANDS TAB -->
+        <div class="command-section">
+            <h2>Send Command</h2>
+            <div class="command-form">
+                <input type="number" id="slot-input" placeholder="Slot" min="1" value="1">
+                <select id="action-select">
+                    <option value="start_login">Start Login</option>
+                    <option value="start_loop">Start Loop</option>
+                    <option value="stop">Stop</option>
+                    <option value="clean_ram">Clean RAM</option>
+                </select>
+                <button onclick="sendCommand()">Send Command</button>
             </div>
-            <script>
-                const API_BASE = '/api';
-                const AUTH_KEY = 'GHOST_SECRET_2026';
-                
-                async function loadStatus() {
-                    try {
-                        const resp = await fetch(API_BASE + '/status', {
-                            headers: { 'X-Auth-Key': AUTH_KEY }
-                        });
-                        if (resp.ok) {
-                            const data = await resp.json();
-                            document.body.innerHTML = `
-                                <div style="text-align: center;">
-                                    <h1>✅ Dashboard Connected!</h1>
-                                    <pre style="background: #16213e; padding: 20px; border-radius: 8px;">
-                                    Online: ${data.online}
-                                    Busy: ${data.busy}
-                                    Idle: ${data.idle}
-                                    Total Panels: ${data.total_panels}
-                                    </pre>
-                                </div>
-                            `;
-                        } else {
-                            throw new Error('HTTP ' + resp.status);
-                        }
-                    } catch (e) {
-                        document.body.innerHTML = '<h1>❌ Error: ' + e.message + '</h1>';
-                    }
+
+            <h2>Command History</h2>
+            <div id="command-list" class="command-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const AUTH_KEY = 'GHOST_SECRET_2026';
+
+        // Load panels setiap 3 detik
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPanels();
+            loadCommands();
+            setInterval(loadPanels, 3000);
+            setInterval(loadCommands, 2000);
+        });
+
+        async function loadPanels() {
+            try {
+                const response = await fetch(`${API_BASE}/status`, {
+                    headers: { 'X-Auth-Key': AUTH_KEY }
+                });
+                const data = await response.json();
+                renderPanels(data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderPanels(data) {
+            const grid = document.getElementById('panels-grid');
+            grid.innerHTML = '';
+            
+            document.getElementById('stat-online').textContent = data.online;
+            document.getElementById('stat-busy').textContent = data.busy;
+            
+            data.panels.forEach(panel => {
+                const card = document.createElement('div');
+                card.className = 'panel-card';
+                card.innerHTML = `
+                    <div class="panel-slot">SLOT ${panel.slot}</div>
+                    <span class="status-badge ${panel.status.toLowerCase()}">${panel.status}</span>
+                    <div style="margin-top: 1rem; font-size: 0.85rem;">
+                        <div>IP: ${panel.ip}</div>
+                        <div>State: ${panel.state}</div>
+                        <div>Emails: ${panel.data.emails}</div>
+                        <div>Links: ${panel.data.links}</div>
+                    </div>
+                    <div style="margin-top: 10px; gap: 5px; display: flex; flex-wrap: wrap;">
+                        <button onclick="executeAction(${panel.slot}, 'start_login')" style="flex: 1; padding: 5px; background: #0f3460; cursor: pointer; border: none; color: #ecf0f1; border-radius: 4px;">Login</button>
+                        <button onclick="executeAction(${panel.slot}, 'start_loop')" style="flex: 1; padding: 5px; background: #0f3460; cursor: pointer; border: none; color: #ecf0f1; border-radius: 4px;">Loop</button>
+                        <button onclick="executeAction(${panel.slot}, 'stop')" style="flex: 1; padding: 5px; background: #e74c3c; cursor: pointer; border: none; color: #ecf0f1; border-radius: 4px;">Stop</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function sendCommand() {
+            const slot = parseInt(document.getElementById('slot-input').value);
+            const action = document.getElementById('action-select').value;
+
+            await executeAction(slot, action);
+        }
+
+        async function executeAction(slot, action) {
+            try {
+                const response = await fetch(`${API_BASE}/command/create`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Auth-Key': AUTH_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        slot: slot,
+                        action: action,
+                        payload: {}
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`✅ Command sent: ${action} to slot ${slot}`);
+                    loadCommands();
+                } else {
+                    alert(`❌ Error: ${response.status}`);
                 }
-                
-                loadStatus();
-            </script>
-        </body>
-        </html>
+            } catch (error) {
+                console.error('Error:', error);
+                alert(`❌ Error: ${error.message}`);
+            }
+        }
+
+        async function loadCommands() {
+            try {
+                const response = await fetch(`${API_BASE}/command/list`, {
+                    headers: { 'X-Auth-Key': AUTH_KEY }
+                });
+                const commands = await response.json();
+                renderCommands(commands);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderCommands(commands) {
+            const list = document.getElementById('command-list');
+            
+            if (!commands || commands.length === 0) {
+                list.innerHTML = '<p style="color: #999;">No commands yet</p>';
+                return;
+            }
+
+            list.innerHTML = commands.map(cmd => `
+                <div class="command-item">
+                    <strong>Slot ${cmd.slot}</strong> - ${cmd.action}
+                    <span class="status-${cmd.status.toLowerCase()}">[${cmd.status}]</span>
+                    <br>
+                    <small>ID: ${cmd.id.substring(0, 8)}...</small>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
         """
 
 @app.route('/health', methods=['GET'])
