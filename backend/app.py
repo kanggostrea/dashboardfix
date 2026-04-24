@@ -47,50 +47,235 @@ def serve_index():
     except FileNotFoundError:
         print(f"⚠️ [SERVE] frontend/index.html not found", flush=True)
         return """
-        <!DOCTYPE html>
+       <!DOCTYPE html>
 <html>
 <head>
     <title>GHOST COMMANDER - Dashboard</title>
-    <link rel="stylesheet" href="/css/styles.css">
     <style>
-        .command-section {
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0f0f1e;
+            color: #ecf0f1;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #1a1a2e, #0f3460);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2d2d4d;
+        }
+
+        .navbar h1 { font-size: 1.5rem; letter-spacing: 2px; }
+
+        .navbar-stats { display: flex; gap: 2rem; }
+
+        .container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #2d2d4d;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: #ecf0f1;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: bold;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #0f3460;
+            color: #0f3460;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* PANELS TAB */
+        .panels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .panel-card {
+            background: linear-gradient(135deg, #16213e, #0f3460);
+            border: 2px solid #2d2d4d;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .panel-card:hover {
+            border-color: #0f3460;
+            box-shadow: 0 0 20px rgba(15, 52, 96, 0.5);
+        }
+
+        .panel-slot { font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .status-badge.online { background-color: rgba(39, 174, 96, 0.3); color: #27ae60; }
+        .status-badge.offline { background-color: rgba(231, 76, 60, 0.3); color: #e74c3c; }
+
+        .panel-info { margin-top: 1rem; font-size: 0.85rem; }
+
+        .panel-buttons {
+            margin-top: 10px;
+            gap: 5px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .panel-buttons button {
+            flex: 1;
+            padding: 8px;
+            background: #0f3460;
+            cursor: pointer;
+            border: none;
+            color: #ecf0f1;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .panel-buttons button:hover { background: #1a5a8a; }
+        .panel-buttons button.stop { background: #e74c3c; }
+        .panel-buttons button.stop:hover { background: #c0392b; }
+
+        /* TASK TAB */
+        .task-form {
             background: #16213e;
             border: 2px solid #0f3460;
             padding: 20px;
             border-radius: 8px;
-            margin-top: 20px;
+            max-width: 600px;
         }
-        .command-form {
-            display: flex;
-            gap: 10px;
+
+        .form-group {
             margin-bottom: 15px;
-            flex-wrap: wrap;
         }
-        .command-form input, .command-form select, .command-form button {
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
             padding: 10px;
-            border: 1px solid #0f3460;
             background: #0f1419;
+            border: 1px solid #0f3460;
             color: #ecf0f1;
             border-radius: 4px;
-            cursor: pointer;
+            font-family: monospace;
         }
-        .command-form button:hover {
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group button {
+            width: 100%;
+            padding: 12px;
             background: #0f3460;
+            border: none;
+            color: #ecf0f1;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: all 0.2s;
         }
+
+        .form-group button:hover { background: #1a5a8a; }
+
+        .url-list {
+            margin-top: 10px;
+        }
+
+        .url-item {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .url-item input { flex: 1; }
+        .url-item button {
+            width: 40px;
+            padding: 8px;
+            background: #e74c3c;
+            cursor: pointer;
+            border: none;
+            color: #ecf0f1;
+            border-radius: 4px;
+        }
+
+        .add-url-btn {
+            background: #27ae60;
+            padding: 8px 15px;
+            border: none;
+            color: #ecf0f1;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        /* COMMAND HISTORY TAB */
         .command-list {
-            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
+
         .command-item {
             background: #16213e;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 4px;
-            font-size: 0.9rem;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #0f3460;
         }
-        .status-pending { color: #f39c12; }
-        .status-executing { color: #3498db; }
-        .status-success { color: #27ae60; }
-        .status-failed { color: #e74c3c; }
+
+        .command-item.pending { border-left-color: #f39c12; }
+        .command-item.executing { border-left-color: #3498db; }
+        .command-item.success { border-left-color: #27ae60; }
+        .command-item.failed { border-left-color: #e74c3c; }
+
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .command-status {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .status-pending { background: rgba(243, 156, 18, 0.3); color: #f39c12; }
+        .status-executing { background: rgba(52, 152, 219, 0.3); color: #3498db; }
+        .status-success { background: rgba(39, 174, 96, 0.3); color: #27ae60; }
+        .status-failed { background: rgba(231, 76, 60, 0.3); color: #e74c3c; }
     </style>
 </head>
 <body>
@@ -103,26 +288,53 @@ def serve_index():
     </div>
 
     <div class="container">
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('panels')">Panels</button>
+            <button class="tab-btn" onclick="switchTab('task')">Send Task</button>
+            <button class="tab-btn" onclick="switchTab('commands')">Command History</button>
+        </div>
+
         <!-- PANELS TAB -->
-        <div id="panels-tab">
-            <h2>Panels</h2>
+        <div id="panels" class="tab-content active">
+            <h2>Active Panels</h2>
             <div class="panels-grid" id="panels-grid"></div>
         </div>
 
-        <!-- COMMANDS TAB -->
-        <div class="command-section">
-            <h2>Send Command</h2>
-            <div class="command-form">
-                <input type="number" id="slot-input" placeholder="Slot" min="1" value="1">
-                <select id="action-select">
-                    <option value="start_login">Start Login</option>
-                    <option value="start_loop">Start Loop</option>
-                    <option value="stop">Stop</option>
-                    <option value="clean_ram">Clean RAM</option>
-                </select>
-                <button onclick="sendCommand()">Send Command</button>
-            </div>
+        <!-- TASK TAB -->
+        <div id="task" class="tab-content">
+            <h2>Send Task to Panel</h2>
+            <div class="task-form">
+                <div class="form-group">
+                    <label>Select Panel (Slot):</label>
+                    <select id="slot-select">
+                        <option value="">-- Select Panel --</option>
+                    </select>
+                </div>
 
+                <div class="form-group">
+                    <label>Email Address:</label>
+                    <input type="email" id="email-input" placeholder="example@gmail.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="password-input" placeholder="Enter password" required>
+                </div>
+
+                <div class="form-group">
+                    <label>URLs (one per line):</label>
+                    <textarea id="urls-input" placeholder="https://example.com/1&#10;https://example.com/2&#10;https://example.com/3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <button onclick="sendTask()">Send Task</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMMAND HISTORY TAB -->
+        <div id="commands" class="tab-content">
             <h2>Command History</h2>
             <div id="command-list" class="command-list"></div>
         </div>
@@ -132,14 +344,28 @@ def serve_index():
         const API_BASE = '/api';
         const AUTH_KEY = 'GHOST_SECRET_2026';
 
-        // Load panels setiap 3 detik
+        // Load data on startup
         document.addEventListener('DOMContentLoaded', () => {
             loadPanels();
             loadCommands();
-            setInterval(loadPanels, 3000);
-            setInterval(loadCommands, 2000);
+            setInterval(loadPanels, 2000);  // ✅ Realtime update setiap 2 detik
+            setInterval(loadCommands, 3000);
         });
 
+        // Tab switching
+        function switchTab(tab) {
+            // Hide all
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            // Show selected
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ============================================
+        // PANELS TAB
+        // ============================================
         async function loadPanels() {
             try {
                 const response = await fetch(`${API_BASE}/status`, {
@@ -147,8 +373,9 @@ def serve_index():
                 });
                 const data = await response.json();
                 renderPanels(data);
+                updateSlotSelect(data.panels);
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error loading panels:', error);
             }
         }
 
@@ -159,33 +386,101 @@ def serve_index():
             document.getElementById('stat-online').textContent = data.online;
             document.getElementById('stat-busy').textContent = data.busy;
             
+            if (data.panels.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; color: #999;">No panels connected</p>';
+                return;
+            }
+            
             data.panels.forEach(panel => {
                 const card = document.createElement('div');
                 card.className = 'panel-card';
                 card.innerHTML = `
                     <div class="panel-slot">SLOT ${panel.slot}</div>
                     <span class="status-badge ${panel.status.toLowerCase()}">${panel.status}</span>
-                    <div style="margin-top: 1rem; font-size: 0.85rem;">
+                    <div class="panel-info">
                         <div>IP: ${panel.ip}</div>
                         <div>State: ${panel.state}</div>
                         <div>Emails: ${panel.data.emails}</div>
                         <div>Links: ${panel.data.links}</div>
                     </div>
-                    <div style="margin-top: 10px; gap: 5px; display: flex; flex-wrap: wrap;">
-                        <button onclick="executeAction(${panel.slot}, 'start_login')" style="flex: 1; padding: 5px; background: #0f3460; cursor: pointer; border: none; color: #ecf0f1; border-radius: 4px;">Login</button>
-                        <button onclick="executeAction(${panel.slot}, 'start_loop')" style="flex: 1; padding: 5px; background: #0f3460; cursor: pointer; border: none; color: #ecf0f1; border-radius: 4px;">Loop</button>
-                        <button onclick="executeAction(${panel.slot}, 'stop')" style="flex: 1; padding: 5px; background: #e74c3c; cursor: pointer; border: none; color: #ecf0f1; border-radius: 4px;">Stop</button>
+                    <div class="panel-buttons">
+                        <button onclick="executeAction(${panel.slot}, 'start_login')">Login</button>
+                        <button onclick="executeAction(${panel.slot}, 'start_loop')">Loop</button>
+                        <button class="stop" onclick="executeAction(${panel.slot}, 'stop')">Stop</button>
                     </div>
                 `;
                 grid.appendChild(card);
             });
         }
 
-        async function sendCommand() {
-            const slot = parseInt(document.getElementById('slot-input').value);
-            const action = document.getElementById('action-select').value;
+        function updateSlotSelect(panels) {
+            const select = document.getElementById('slot-select');
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="">-- Select Panel --</option>';
+            panels.forEach(panel => {
+                const option = document.createElement('option');
+                option.value = panel.slot;
+                option.textContent = `Slot ${panel.slot} (${panel.status} - ${panel.state})`;
+                select.appendChild(option);
+            });
+            
+            if (currentValue) select.value = currentValue;
+        }
 
-            await executeAction(slot, action);
+        // ============================================
+        // TASK TAB
+        // ============================================
+        async function sendTask() {
+            const slot = parseInt(document.getElementById('slot-select').value);
+            const email = document.getElementById('email-input').value;
+            const password = document.getElementById('password-input').value;
+            const urlsText = document.getElementById('urls-input').value;
+            const urls = urlsText.split('\n').filter(u => u.trim());
+
+            // Validation
+            if (!slot || !email || !password || urls.length === 0) {
+                alert('❌ Please fill all fields!');
+                return;
+            }
+
+            try {
+                // Create command dengan payload
+                const response = await fetch(`${API_BASE}/command/create`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Auth-Key': AUTH_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        slot: slot,
+                        action: 'start_login',
+                        payload: {
+                            email: email,
+                            password: password,
+                            urls: urls
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`✅ Task sent to Slot ${slot}!\nCommand ID: ${data.id}`);
+                    
+                    // Clear form
+                    document.getElementById('email-input').value = '';
+                    document.getElementById('password-input').value = '';
+                    document.getElementById('urls-input').value = '';
+                    
+                    // Reload commands
+                    loadCommands();
+                } else {
+                    alert(`❌ Error: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert(`❌ Error: ${error.message}`);
+            }
         }
 
         async function executeAction(slot, action) {
@@ -204,18 +499,17 @@ def serve_index():
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
-                    alert(`✅ Command sent: ${action} to slot ${slot}`);
+                    console.log(`✅ ${action} sent to slot ${slot}`);
                     loadCommands();
-                } else {
-                    alert(`❌ Error: ${response.status}`);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert(`❌ Error: ${error.message}`);
             }
         }
 
+        // ============================================
+        // COMMAND HISTORY TAB
+        // ============================================
         async function loadCommands() {
             try {
                 const response = await fetch(`${API_BASE}/command/list`, {
@@ -224,7 +518,7 @@ def serve_index():
                 const commands = await response.json();
                 renderCommands(commands);
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error loading commands:', error);
             }
         }
 
@@ -236,12 +530,21 @@ def serve_index():
                 return;
             }
 
-            list.innerHTML = commands.map(cmd => `
-                <div class="command-item">
-                    <strong>Slot ${cmd.slot}</strong> - ${cmd.action}
-                    <span class="status-${cmd.status.toLowerCase()}">[${cmd.status}]</span>
-                    <br>
-                    <small>ID: ${cmd.id.substring(0, 8)}...</small>
+            // Sort by newest first
+            commands.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+            list.innerHTML = commands.map((cmd, idx) => `
+                <div class="command-item ${(cmd.status || 'pending').toLowerCase()}">
+                    <div class="command-header">
+                        <div><strong>Slot ${cmd.slot} - ${cmd.action}</strong></div>
+                        <span class="command-status status-${(cmd.status || 'pending').toLowerCase()}">
+                            ${(cmd.status || 'PENDING').toUpperCase()}
+                        </span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #999;">
+                        ID: ${cmd.id ? cmd.id.substring(0, 8) : 'N/A'}...
+                        ${cmd.created_at ? '| ' + new Date(cmd.created_at).toLocaleTimeString() : ''}
+                    </div>
                 </div>
             `).join('');
         }
@@ -426,9 +729,32 @@ def heartbeat():
 # ============================================
 @app.route('/api/status', methods=['GET'])
 def status():
-    """Get dashboard status summary"""
+    """Get dashboard status summary dengan offline detection"""
     try:
         summary = registry.get_status_summary()
+        
+        # ✅ Mark panels offline jika heartbeat lama
+        import time as time_module
+        current_time = time_module.time()
+        
+        # Check each panel's last heartbeat
+        for panel_id, panel_data in registry.panels.items():
+            try:
+                from datetime import datetime
+                last_hb = datetime.fromisoformat(panel_data['last_heartbeat'])
+                last_hb_seconds = (datetime.now() - last_hb).total_seconds()
+                
+                # Offline jika > 60 detik tanpa heartbeat
+                if last_hb_seconds > 60:
+                    panel_data['status'] = 'OFFLINE'
+                else:
+                    panel_data['status'] = 'ONLINE'
+            except:
+                pass
+        
+        # Recalculate summary
+        summary = registry.get_status_summary()
+        
         print(f"📊 [STATUS] Online: {summary['online']}, Busy: {summary['busy']}, Idle: {summary['idle']}", flush=True)
         return jsonify(summary), 200
     except Exception as e:
