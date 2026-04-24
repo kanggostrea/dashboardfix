@@ -730,30 +730,9 @@ def heartbeat():
 @app.route('/api/status', methods=['GET'])
 def status():
     try:
-        from datetime import datetime
-        current_time = datetime.now()
-        
-        for panel_id, panel_data in registry.panels.items():
-            try:
-                last_hb_str = panel_data.get('last_heartbeat', '')
-                if not last_hb_str:
-                    panel_data['status'] = 'OFFLINE'
-                    continue
-                    
-                last_hb = datetime.fromisoformat(last_hb_str)
-                elapsed = (current_time - last_hb).total_seconds()
-                
-                # 120 detik threshold (heartbeat tiap 30s, kasih buffer 4x)
-                panel_data['status'] = 'ONLINE' if elapsed <= 120 else 'OFFLINE'
-                
-            except Exception as e:
-                print(f"⚠️ [STATUS] Error parsing panel {panel_id}: {e}", flush=True)
-                panel_data['status'] = 'OFFLINE'
-        
         summary = registry.get_status_summary()
         print(f"📊 [STATUS] Online: {summary['online']}, Busy: {summary['busy']}", flush=True)
         return jsonify(summary), 200
-        
     except Exception as e:
         print(f"❌ [STATUS] Exception: {e}", flush=True)
         return jsonify({"error": str(e)}), 500
