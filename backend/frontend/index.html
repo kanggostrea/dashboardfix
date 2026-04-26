@@ -251,16 +251,16 @@
         </div>
     </div>
 
-    <script>
+      <script>
         const API_BASE = '/api';
         const AUTH_KEY = 'GHOST_SECRET_2026';
+        let lastPanelUpdate = 0;  // ← Track waktu update terakhir
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('[INIT] Dashboard loaded');
             loadPanels();
             loadCommands();
-            setInterval(loadPanels, 2000);
-            setInterval(loadCommands, 3000);
+            setInterval(loadPanels, 3000);  // ← Ubah dari 2000 ke 3000 (3 detik)
+            setInterval(loadCommands, 5000);  // ← Ubah ke 5 detik
         });
 
         function switchTab(tab) {
@@ -276,7 +276,6 @@
                     headers: { 'X-Auth-Key': AUTH_KEY }
                 });
                 const data = await response.json();
-                console.log('[PANELS] Response:', data);
                 renderPanels(data);
                 if (data.panels && Array.isArray(data.panels)) {
                     updateSlotSelect(data.panels);
@@ -298,8 +297,6 @@
             const online = data.online || 0;
             const busy = data.busy || 0;
             const panels = data.panels || [];
-
-            console.log('[RENDER] online=' + online + ' busy=' + busy + ' panels=' + panels.length);
 
             document.getElementById('stat-online').textContent = online;
             document.getElementById('stat-busy').textContent = busy;
@@ -332,6 +329,8 @@
 
         function updateSlotSelect(panels) {
             const select = document.getElementById('slot-select');
+            const currentValue = select.value;  // ← SIMPAN value lama
+            
             select.innerHTML = '<option value="">-- Select Panel --</option>';
             
             panels.forEach(function(panel) {
@@ -340,6 +339,11 @@
                 opt.textContent = 'Slot ' + panel.slot + ' (' + (panel.status || 'UNKNOWN') + ' - ' + (panel.state || 'UNKNOWN') + ')';
                 select.appendChild(opt);
             });
+            
+            // ✅ RESTORE nilai yang dipilih sebelumnya
+            if (currentValue) {
+                select.value = currentValue;
+            }
         }
 
         async function sendTask() {
@@ -350,7 +354,7 @@
             const urls = urlsText.split('\n').filter(u => u.trim());
 
             if (!slot || !email || !password || urls.length === 0) {
-                alert('Please fill all fields!');
+                alert('❌ Please fill all fields!');
                 return;
             }
 
@@ -374,15 +378,18 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    alert('Task sent to Slot ' + slot);
+                    alert('✅ Task sent to Slot ' + slot + '!');
                     document.getElementById('email-input').value = '';
                     document.getElementById('password-input').value = '';
                     document.getElementById('urls-input').value = '';
+                    document.getElementById('slot-select').value = '';  // ← Reset slot
                     loadCommands();
+                } else {
+                    alert('❌ Error: ' + response.status);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error: ' + error.message);
+                alert('❌ Error: ' + error.message);
             }
         }
 
